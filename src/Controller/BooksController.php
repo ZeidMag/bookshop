@@ -2,6 +2,7 @@
 namespace App\Controller;
 
 use App\Controller\AppController;
+use Cake\Event\Event;
 
 /**
  * Books Controller
@@ -10,14 +11,45 @@ use App\Controller\AppController;
  *
  * @method \App\Model\Entity\Book[]|\Cake\Datasource\ResultSetInterface paginate($object = null, array $settings = [])
  */
+
+
+
 class BooksController extends AppController
 {
-    public function initialize(){
-
+    public function initialize()
+    {
         parent::initialize();
-
-       // $this->Auth->allow(['index']);
+        $this->Auth->allow(['index','view','unauthorized']);
     }
+
+    public function isAuthorized($user)
+    {
+        if(!$user){
+            return $this->redirect(['action' => 'unauthorized']);   
+        }
+        return true;
+    }
+
+    public function beforeFilter(Event $event)
+    {
+        parent::beforeFilter($event);
+        $action = $this->request->getParam('action');
+
+        if (!$this->loggedIn && !in_array($action, ['index','view','unauthorized'])) {
+            $this->actionTaken = $action;
+            return $this->setAction('unauthorized');
+        }
+        return true;
+    }
+
+    public function unauthorized()
+    {
+        $response = new unauthorizedAccess('Please login to ' . $this->actionTaken . ' a book');
+        $this->RequestHandler->renderAs($this, 'json');
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
+    }
+
 
     /**
      * Index method
@@ -28,13 +60,15 @@ class BooksController extends AppController
     {
         $this->paginate = [
             'contain' => ['Authors'],
+            'limit' => 200
         ];
-        $books = $this->paginate($this->Books);
 
+        $books = $this->paginate($this->Books);
+        $response = new authorizedAccess($books);
         $this->RequestHandler->renderAs($this, 'json');
-        $this->log($books);
-        $this->set(compact('books'));
-        $this->set('_serialize', 'books');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 
     /**
@@ -50,7 +84,11 @@ class BooksController extends AppController
             'contain' => ['Authors', 'Rents'],
         ]);
 
-        $this->set('book', $book);
+        $response = new authorizedAccess($book);
+        $this->RequestHandler->renderAs($this, 'json');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 
     public function react(){
@@ -69,8 +107,6 @@ class BooksController extends AppController
                 $js[] = '/react/' . $resource;
            }
         }
-
-
         $this->set(compact('css', 'js'));
 }
 
@@ -96,10 +132,11 @@ class BooksController extends AppController
             'contain' => ['Authors'],
         ];
         $books = $this->paginate($this->Books);
+        $response = new authorizedAccess($books);
         $this->RequestHandler->renderAs($this, 'json');
-        $this->log($books);
-        $this->set(compact('books'));
-        $this->set('_serialize', 'books');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 
     /**
@@ -118,20 +155,17 @@ class BooksController extends AppController
             $book = $this->Books->patchEntity($book, $this->request->getData());
             if ($this->Books->save($book)) {
                 $this->Flash->success(__('The book has been saved.'));
-
-                // return $this->redirect(['action' => 'index']);
             }else {
-
                 $this->Flash->error(__('The book could not be saved. Please, try again.'));
             }
         }
 
         $books = $this->paginate($this->Books);
-
+        $response = new authorizedAccess($books);
         $this->RequestHandler->renderAs($this, 'json');
-        $this->log($books);
-        $this->set(compact('books'));
-        $this->set('_serialize', 'books');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 
     /**
@@ -153,7 +187,7 @@ class BooksController extends AppController
 
         // return $this->redirect(['action' => 'index']);
         $books = $this->paginate($this->Books);
-
+        $response = new authorizedAccess($books);
         $this->RequestHandler->renderAs($this, 'json');
         $this->log($books);
         $this->set(compact('books'));

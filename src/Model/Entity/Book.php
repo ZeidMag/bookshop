@@ -33,5 +33,6 @@ class Book extends Entity
         'author_id' => true,
         'author' => true,
         'rents' => true,
+        'image_url' => true
     ];
 }

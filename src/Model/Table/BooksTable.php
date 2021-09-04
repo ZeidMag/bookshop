@@ -71,6 +71,12 @@ class BooksTable extends Table
         $validator
             ->integer('publish_year')
             ->allowEmptyString('publish_year');
+        
+        $validator
+            ->scalar('image_url')
+            ->maxLength('image_url', 255)
+            ->requirePresence('image_url', 'create')
+            ->allowEmptyString('image_url');
 
         return $validator;
     }

@@ -2,6 +2,7 @@
 namespace App\Controller;
 
 use App\Controller\AppController;
+use Cake\Event\Event;
 
 /**
  * Rents Controller
@@ -17,16 +18,56 @@ class RentsController extends AppController
      *
      * @return \Cake\Http\Response|null
      */
+
+    public function initialize(){
+
+        parent::initialize();
+
+       $this->Auth->allow(['unauthorized']);
+    }
+
+    public function isAuthorized($user)
+    {
+        if(!$user){
+            return $this->redirect(['action' => 'unauthorized']);   
+        }
+        $this->user = $user;
+        return true;
+    }
+
+    public function beforeFilter(Event $event)
+    {
+        parent::beforeFilter($event);
+        $action = $this->request->getParam('action');
+
+        if (!$this->loggedIn && !in_array($action, ['unauthorized'])) {
+            $this->actionTaken = $action;
+            return $this->setAction('unauthorized');
+        }
+        return true;
+    }
+
+    public function unauthorized()
+    {
+        $response = new unauthorizedAccess('Please login to access ' . $this->actionTaken);
+        $this->RequestHandler->renderAs($this, 'json');
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
+    }
+
+    // public function index(Query $query,array $options)
     public function index()
     {
         $this->paginate = [
+            'conditions' => ['Users.id =' => $this->user['id']],
             'contain' => ['Users', 'Books'],
         ];
-        $rents = $this->paginate($this->Rents);
+        $rents = $this->paginate();
+        $response = new authorizedAccess($rents);
         $this->RequestHandler->renderAs($this, 'json');
-        $this->log($rents);
-        $this->set(compact('rents'));
-        $this->set('_serialize', 'rents');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 
     /**
@@ -39,10 +80,15 @@ class RentsController extends AppController
     public function view($id = null)
     {
         $rent = $this->Rents->get($id, [
+            'conditions' => ['Users.id =' => $this->user['id']],
             'contain' => ['Users', 'Books'],
         ]);
 
-        $this->set('rent', $rent);
+        $response = new authorizedAccess($rent);
+        $this->RequestHandler->renderAs($this, 'json');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 
     /**
@@ -62,14 +108,15 @@ class RentsController extends AppController
                 $this->Flash->error(__('The rent could not be saved. Please, try again.'));
             }
         }
-        $users = $this->Rents->Users->find('list', ['limit' => 200]);
-        $books = $this->Rents->Books->find('list', ['limit' => 200]);
+        // $users = $this->Rents->Users->find('list', ['limit' => 200]);
+        // $books = $this->Rents->Books->find('list', ['limit' => 200]);
 
         $rents = $this->paginate($this->Rents);
+        $response = new authorizedAccess($rents);
         $this->RequestHandler->renderAs($this, 'json');
-        $this->log($rents);
-        $this->set(compact('rents', 'users', 'books'));
-        $this->set('_serialize', 'rents', 'users', 'books');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 
     /**
@@ -93,9 +140,13 @@ class RentsController extends AppController
             }
             $this->Flash->error(__('The rent could not be saved. Please, try again.'));
         }
-        $users = $this->Rents->Users->find('list', ['limit' => 200]);
-        $books = $this->Rents->Books->find('list', ['limit' => 200]);
-        $this->set(compact('rent', 'users', 'books'));
+
+        $rents = $this->paginate($this->Rents);
+        $response = new authorizedAccess($rents);
+        $this->RequestHandler->renderAs($this, 'json');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 
     /**
@@ -115,6 +166,11 @@ class RentsController extends AppController
             $this->Flash->error(__('The rent could not be deleted. Please, try again.'));
         }
 
-        return $this->redirect(['action' => 'index']);
+        $rents = $this->paginate($this->Rents);
+        $response = new authorizedAccess($rents);
+        $this->RequestHandler->renderAs($this, 'json');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 }

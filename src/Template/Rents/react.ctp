@@ -12,6 +12,6 @@
 
 <div class="articles index large-9 medium-8 columns content">
     <!-- this is where the react page mounts -->
-    <div id="root" baseUrl="<?= $this->Url->build('/'); ?>"></div>
+    <div id="root" baseUrl="<?= $this->Url->build('/rents'); ?>"></div>
     <?= $this->Html->script($js); ?>
 </div>

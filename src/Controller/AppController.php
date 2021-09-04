@@ -25,6 +25,7 @@ use Cake\Event\Event;
  *
  * @link https://book.cakephp.org/3/en/controllers.html#the-app-controller
  */
+
 class AppController extends Controller
 {
 
@@ -45,11 +46,70 @@ class AppController extends Controller
             'enableBeforeRedirect' => false,
         ]);
         $this->loadComponent('Flash');
+        $this->loadComponent('Auth', [
+            'authorize'=> 'Controller',
+            'authenticate' => [
+                'Form' => [
+                    'fields' => [
+                        'username' => 'username',
+                        'password' => 'password'
+                    ]
+                ]
+            ],
+            'loginAction' => [
+                'controller' => 'Users',
+                'action' => 'login'
+            ],
+             // If unauthorized, return them to page they were just on
+            'unauthorizedRedirect' => false,
+        ]);
+
+
+        // Allow the display action so our PagesController
+        // continues to work. Also enable the read only actions.
+        // $this->Auth->allow(['display', 'view', 'index']);
 
         /*
          * Enable the following component for recommended CakePHP security settings.
          * see https://book.cakephp.org/3/en/controllers/components/security.html
          */
-        //$this->loadComponent('Security');
+        // $this->loadComponent('Security');
     }
+
+    public function isAuthorized($user)
+    {
+        // By default deny access.
+        return false;
+    }
+
+    public function beforeFilter(Event $event){
+        if($this->request->session()->read('Auth.User')){
+            $this->loggedIn = true;
+        } else {
+            $this->loggedIn = false;
+        }
+    }
+}
+
+
+class unauthorizedAccess {
+    public $success = false;
+    public $message;
+
+    public function __construct($message){
+        $this->message = $message;
+    }
+} 
+
+class authorizedAccess {
+    public $success = true;
+    public $data;
+
+    public function __construct($data){
+        $this->data = $data;
+    }
+}
+
+class successfulRegister {
+    public $success = true;
 }

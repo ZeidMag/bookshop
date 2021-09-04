@@ -2,6 +2,7 @@
 namespace App\Controller;
 
 use App\Controller\AppController;
+use Cake\Event\Event;
 
 /**
  * Authors Controller
@@ -16,8 +17,37 @@ class AuthorsController extends AppController
 
         parent::initialize();
 
-       // $this->Auth->allow(['index']);
+       $this->Auth->allow(['index','view','unauthorized']);
     }
+
+    public function isAuthorized($user)
+    {
+        if(!$user){
+            return $this->redirect(['action' => 'unauthorized']);   
+        }
+        return true;
+    }
+
+    public function beforeFilter(Event $event)
+    {
+        parent::beforeFilter($event);
+        $action = $this->request->getParam('action');
+
+        if (!$this->loggedIn && !in_array($action, ['index','view','unauthorized'])) {
+            $this->actionTaken = $action;
+            return $this->setAction('unauthorized');
+        }
+        return true;
+    }
+
+    public function unauthorized()
+    {
+        $response = new unauthorizedAccess('Please login to ' . $this->actionTaken . ' an author');
+        $this->RequestHandler->renderAs($this, 'json');
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
+    }
+
     /**
      * Index method
      *
@@ -26,11 +56,11 @@ class AuthorsController extends AppController
     public function index()
     {
         $authors = $this->paginate($this->Authors);
-
+        $response = new authorizedAccess($authors);
         $this->RequestHandler->renderAs($this, 'json');
-        $this->log($authors);
-        $this->set(compact('authors'));
-        $this->set('_serialize', 'authors');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 
     /**
@@ -46,7 +76,11 @@ class AuthorsController extends AppController
             'contain' => ['Books'],
         ]);
 
-        $this->set('author', $author);
+        $response = new authorizedAccess($author);
+        $this->RequestHandler->renderAs($this, 'json');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 
     public function react(){
@@ -90,11 +124,11 @@ class AuthorsController extends AppController
             }
         }
         $authors = $this->paginate($this->Authors);
-
+        $response = new authorizedAccess($authors);
         $this->RequestHandler->renderAs($this, 'json');
-        $this->log($authors);
-        $this->set(compact('authors'));
-        $this->set('_serialize', 'authors');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 
     /**
@@ -123,7 +157,12 @@ class AuthorsController extends AppController
             }
         }
 
-        return $this->redirect(['action' => 'index']);
+        $authors = $this->paginate($this->Authors);
+        $response = new authorizedAccess($authors);
+        $this->RequestHandler->renderAs($this, 'json');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 
     /**
@@ -143,6 +182,11 @@ class AuthorsController extends AppController
             $this->Flash->error(__('The author could not be deleted. Please, try again.'));
         }
 
-        return $this->redirect(['action' => 'index']);
+        $authors = $this->paginate($this->Authors);
+        $response = new authorizedAccess($authors);
+        $this->RequestHandler->renderAs($this, 'json');
+        $this->log($response);
+        $this->set(compact('response'));
+        $this->set('_serialize', 'response');
     }
 }

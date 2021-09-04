@@ -400,5 +400,11 @@ return [
      */
     'Session' => [
         'defaults' => 'php',
+        'ini' => [
+            // 'session.cookie_secure' => false,
+            // 'session.cookie_path' => '/bookshop/',
+            // 'cookie' => 'my_app',
+            // 'session.cookie_name' => 'CAKEPHP'
+        ]
     ],
 ];
